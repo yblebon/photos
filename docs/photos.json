@@ -1,0 +1,19 @@
+{
+  "albums": [
+    { "id": 1, "title": "Recents", "count": "1,240", "url": "https://picsum.photos/id/101/600/600" },
+    { "id": 2, "title": "Favorites", "count": "85", "url": "https://picsum.photos/id/102/600/600" },
+    { "id": 3, "title": "Travel", "count": "432", "url": "https://picsum.photos/id/103/600/600" },
+    { "id": 4, "title": "Work", "count": "12", "url": "https://picsum.photos/id/104/600/600" }
+  ],
+  "photos": [
+    { "id": 10, "alt": "Mountain View", "url": "https://picsum.photos/id/10/800/1000" },
+    { "id": 11, "alt": "Cityscape", "url": "https://picsum.photos/id/11/800/800" },
+    { "id": 12, "alt": "Ocean Blue", "url": "https://picsum.photos/id/12/1000/800" },
+    { "id": 13, "alt": "Forest Path", "url": "https://picsum.photos/id/13/800/1200" },
+    { "id": 14, "alt": "Desert Sands", "url": "https://picsum.photos/id/14/1200/800" },
+    { "id": 15, "alt": "Urban Light", "url": "https://picsum.photos/id/15/800/800" },
+    { "id": 16, "alt": "Night Sky", "url": "https://picsum.photos/id/16/800/1000" },
+    { "id": 17, "alt": "Snow Peak", "url": "https://picsum.photos/id/17/800/800" },
+    { "id": 18, "alt": "Green Field", "url": "https://picsum.photos/id/18/1000/800" }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "short_name": "PhotosPWA",
+  "name": "My Smooth Photo Library",
+  "display": "standalone",
+  "start_url": "/",
+  "background_color": "#ffffff",
+  "theme_color": "#007AFF",
+  "icons": [
+    {
+      "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAMAAABlSTJ6AAAAA1BMVEUAAACnej3aAAAAAXRSTlMAQObYZgAAADpJREFUeNrtwQEBAAAAgiD/r25IQAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAfBuCAAAB0ni46AAAAABJRU5ErkJggg==",
+      "type": "image/png",
+      "sizes": "192x192"
+    }
+  ]
+}

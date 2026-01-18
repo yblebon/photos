@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#ffffff">
+  <title>Smooth PWA - Photos</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <main id="content">
+    <section class="album-section">
+      <div class="section-header">
+        <h2>Albums</h2>
+        <button class="text-btn">See All</button>
+      </div>
+      <div class="album-scroller" id="album-scroller"></div>
+    </section>
+
+    <section class="photos-section">
+      <div class="section-header">
+        <h2>All Photos</h2>
+      </div>
+      <div class="photo-grid" id="photo-grid"></div>
+    </section>
+  </main>
+
+  <nav class="bottom-nav">
+    <div class="nav-item active"><i data-lucide="image"></i><span>Library</span></div>
+    <div class="nav-item"><i data-lucide="search"></i><span>Search</span></div>
+    <div class="nav-item"><i data-lucide="heart"></i><span>For You</span></div>
+    <div class="nav-item"><i data-lucide="user"></i><span>Profile</span></div>
+  </nav>
+
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    async function loadGallery() {
+      try {
+        const response = await fetch('photos.json');
+        const data = await response.json();
+
+        // Render Albums
+        const albumScroller = document.getElementById('album-scroller');
+        albumScroller.innerHTML = data.albums.map(album => `
+          <div class="album-card">
+            <img src="${album.url}" alt="${album.title}" loading="lazy">
+            <div class="album-info">
+              <strong>${album.title}</strong>
+              <span>${album.count}</span>
+            </div>
+          </div>
+        `).join('');
+
+        // Render Photos
+        const photoGrid = document.getElementById('photo-grid');
+        photoGrid.innerHTML = data.photos.map(photo => `
+          <div class="photo-item">
+            <img src="${photo.url}" alt="${photo.alt}" loading="lazy">
+          </div>
+        `).join('');
+
+        // Initialize icons after content is injected
+        lucide.createIcons();
+      } catch (error) {
+        console.error("Error loading gallery data:", error);
+      }
+    }
+
+    // Call the loader
+    loadGallery();
+
+    // Register Service Worker
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js');
+      });
+    }
+  </script>
+</body>
+</html>

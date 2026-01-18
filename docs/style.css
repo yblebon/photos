@@ -1,0 +1,99 @@
+:root {
+  --primary: #007AFF;
+  --bg: #ffffff;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica;
+  background-color: var(--bg);
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#content {
+  padding: 20px 0;
+  padding-bottom: 100px;
+}
+
+section {
+  padding: 0 15px;
+  margin-bottom: 30px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+h2 { margin: 0; font-size: 22px; font-weight: 700; }
+
+.text-btn {
+  background: none; border: none;
+  color: var(--primary); font-size: 16px;
+}
+
+/* Album Scroller */
+.album-scroller {
+  display: flex; gap: 15px;
+  overflow-x: auto; padding-bottom: 10px;
+  scrollbar-width: none;
+}
+.album-scroller::-webkit-scrollbar { display: none; }
+
+.album-card { min-width: 150px; }
+.album-card img {
+  width: 150px; height: 150px;
+  border-radius: 10px; object-fit: cover;
+}
+
+.album-info {
+  margin-top: 8px; display: flex; flex-direction: column;
+}
+.album-info strong { font-size: 14px; color: #000; }
+.album-info span { font-size: 13px; color: #8e8e93; }
+
+/* Photo Grid */
+.photos-section { padding: 0; }
+.photos-section h2 { padding: 0 15px; margin-bottom: 15px; }
+
+.photo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2px;
+}
+
+.photo-item {
+  aspect-ratio: 1 / 1;
+  background: #eee;
+  overflow: hidden;
+}
+
+.photo-item img {
+  width: 100%; height: 100%;
+  object-fit: cover; display: block;
+}
+
+.photo-item:active { opacity: 0.7; }
+
+/* Bottom Navigation */
+.bottom-nav {
+  position: fixed; bottom: 0;
+  width: 100%; height: 70px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px);
+  display: flex; justify-content: space-around; align-items: center;
+  border-top: 0.5px solid #d1d1d6;
+  padding-bottom: env(safe-area-inset-bottom);
+  z-index: 100;
+}
+
+.nav-item {
+  display: flex; flex-direction: column;
+  align-items: center; color: #8e8e93; font-size: 10px;
+}
+.nav-item.active { color: var(--primary); }
+.nav-item i { width: 24px; height: 24px; margin-bottom: 2px; }
