@@ -11,17 +11,24 @@
 <body>
 
   <main id="content">
+    <div class="search-container">
+      <div class="search-input-wrapper">
+        <i data-lucide="search" class="search-icon"></i>
+        <input type="text" id="photo-search" placeholder="Search photos, tags, or albums...">
+      </div>
+    </div>
+
     <section class="album-section">
       <div class="section-header">
         <h2>Albums</h2>
-        <button class="text-btn">See All</button>
+        <button class="text-btn" onclick="resetFilter()">Show All</button>
       </div>
       <div class="album-scroller" id="album-scroller"></div>
     </section>
 
     <section class="photos-section">
       <div class="section-header">
-        <h2>All Photos</h2>
+        <h2 id="grid-title">All Photos</h2>
       </div>
       <div class="photo-grid" id="photo-grid"></div>
     </section>
@@ -36,15 +43,19 @@
 
   <script src="https://unpkg.com/lucide@latest"></script>
   <script>
+    let allPhotos = [];
+    const searchInput = document.getElementById('photo-search');
+    const gridTitle = document.getElementById('grid-title');
+
     async function loadGallery() {
       try {
         const response = await fetch('photos.json');
         const data = await response.json();
+        allPhotos = data.photos;
 
-        // Render Albums
         const albumScroller = document.getElementById('album-scroller');
         albumScroller.innerHTML = data.albums.map(album => `
-          <div class="album-card">
+          <div class="album-card" onclick="filterByAlbum('${album.title}')">
             <img src="${album.url}" alt="${album.title}" loading="lazy">
             <div class="album-info">
               <strong>${album.title}</strong>
@@ -53,25 +64,56 @@
           </div>
         `).join('');
 
-        // Render Photos
-        const photoGrid = document.getElementById('photo-grid');
-        photoGrid.innerHTML = data.photos.map(photo => `
-          <div class="photo-item">
-            <img src="${photo.url}" alt="${photo.alt}" loading="lazy">
-          </div>
-        `).join('');
-
-        // Initialize icons after content is injected
+        renderPhotos(allPhotos);
         lucide.createIcons();
-      } catch (error) {
-        console.error("Error loading gallery data:", error);
-      }
+      } catch (error) { console.error("Error:", error); }
     }
 
-    // Call the loader
+    function renderPhotos(photosToDisplay) {
+      const photoGrid = document.getElementById('photo-grid');
+      photoGrid.innerHTML = photosToDisplay.map(photo => `
+        <div class="photo-item">
+          <img src="${photo.url}" alt="${photo.name}" loading="lazy">
+          <div class="photo-overlay">
+            <div class="tags">
+              ${photo.tags.map(tag => `<span>#${tag}</span>`).join('')}
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // New: Filter by Album function
+    function filterByAlbum(albumName) {
+      searchInput.value = albumName;
+      gridTitle.innerText = `Photos in ${albumName}`;
+      applySearch(albumName);
+    }
+
+    // New: Reset function
+    function resetFilter() {
+      searchInput.value = "";
+      gridTitle.innerText = "All Photos";
+      renderPhotos(allPhotos);
+    }
+
+    function applySearch(term) {
+      const lowerTerm = term.toLowerCase();
+      const filtered = allPhotos.filter(photo => 
+        photo.name.toLowerCase().includes(lowerTerm) || 
+        photo.album.toLowerCase().includes(lowerTerm) || 
+        photo.tags.some(tag => tag.toLowerCase().includes(lowerTerm))
+      );
+      renderPhotos(filtered);
+    }
+
+    searchInput.addEventListener('input', (e) => {
+      gridTitle.innerText = e.target.value ? `Results for "${e.target.value}"` : "All Photos";
+      applySearch(e.target.value);
+    });
+
     loadGallery();
 
-    // Register Service Worker
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('sw.js');
