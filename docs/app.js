@@ -1,6 +1,6 @@
 /**
  * External script for Photos PWA
- * Handles API integration, Authentication, and UI rendering
+ * Handles Auth, API integration, and UI rendering
  */
 
 let allPhotos = [];
@@ -10,10 +10,10 @@ let currentPage = 1;
 let hasNextPage = false;
 
 let API_BASE_URL = "";
-let AUTH_BASE_URL = "";
+let AUTH_BASE_URL = ""; // Loaded from config
 let token = localStorage.getItem('auth_token');
 
-// Select DOM elements
+// DOM Elements
 const searchInput = document.getElementById('photo-search');
 const photoGrid = document.getElementById('photo-grid');
 const selectModeBtn = document.getElementById('select-mode-btn');
@@ -23,14 +23,15 @@ const dlBtn = document.getElementById('dl-btn');
 const authScreen = document.getElementById('auth-screen');
 
 /**
- * Step 1: Initialize App and Config
+ * Initialize App: Load config and check session
  */
 async function initApp() {
   try {
     const response = await fetch('config.json');
     const config = await response.json();
     API_BASE_URL = config.API_BASE_URL;
-    AUTH_BASE_URL = config.AUTH_BASE_URL;
+    // Fallback if AUTH_BASE_URL isn't in config yet
+    AUTH_BASE_URL = config.AUTH_BASE_URL || API_BASE_URL.replace('/api', '/auth');
 
     if (!token) {
       showAuth(true);
@@ -43,8 +44,8 @@ async function initApp() {
 }
 
 /**
- * Step 2: Authentication Logic
- * Maps 'access_token' from the identity provider response
+ * Handle Authentication
+ * FIX: Maps 'access_token' from response to prevent "Invalid credentials" error
  */
 window.handleLogin = async () => {
   const user = document.getElementById('username').value;
@@ -65,14 +66,14 @@ window.handleLogin = async () => {
 
     const data = await res.json();
     
-    // FIX: Using access_token based on your API requirements
+    // Check specifically for access_token as per your backend requirement
     if (res.ok && data.access_token) {
       token = data.access_token;
       localStorage.setItem('auth_token', token);
       showAuth(false);
       loadGallery();
     } else {
-      alert("Invalid credentials");
+      alert(data.message || "Invalid credentials");
     }
   } catch (err) {
     alert("Authentication service unavailable");
@@ -96,16 +97,14 @@ function showAuth(show) {
 }
 
 /**
- * Step 3: Secure API Fetching
+ * Fetch Photos with Authorization Header
  */
 async function loadGallery(page = 1, append = false) {
   if (!API_BASE_URL || !token) return;
 
   try {
     const res = await fetch(`${API_BASE_URL}/photos?page=${page}&limit=12`, {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
+      headers: { 'Authorization': `Bearer ${token}` }
     });
 
     if (res.status === 401) return handleLogout();
@@ -115,8 +114,7 @@ async function loadGallery(page = 1, append = false) {
       id: p._id,
       name: p.fileName,
       url: `data:image/${p.thumbFormat};base64,${p.thumbnail}`,
-      tags: ["Gallery"], 
-      album: "Library"
+      tags: ["Gallery"]
     }));
 
     allPhotos = append ? [...allPhotos, ...newPhotos] : newPhotos;
@@ -131,7 +129,7 @@ async function loadGallery(page = 1, append = false) {
 }
 
 /**
- * UI Rendering & Select Logic
+ * UI Rendering Logic
  */
 function renderPhotos(photos) {
   if (!photoGrid) return;
@@ -140,39 +138,29 @@ function renderPhotos(photos) {
          ondblclick="handlePhotoSelect('${photo.id}')">
       <img src="${photo.url}" alt="${photo.name}" loading="lazy">
       <div class="select-indicator"><i data-lucide="check-circle-2"></i></div>
-      <div class="photo-overlay">
-        <div class="tags">${photo.tags.map(t => `<span>#${t}</span>`).join('')}</div>
-      </div>
     </div>
   `).join('');
-  
-  if (window.lucide) window.lucide.createIcons();
+  if (window.lucide) lucide.createIcons();
 }
 
 function updateLoadMoreButton() {
-  const existingContainer = document.getElementById('load-more-container');
-  if (existingContainer) existingContainer.remove();
+  const existing = document.getElementById('load-more-container');
+  if (existing) existing.remove();
 
   if (hasNextPage) {
     const container = document.createElement('div');
     container.id = 'load-more-container';
-    container.style = 'padding: 20px; text-align: center; width: 100%;';
     container.innerHTML = `<button class="text-btn" onclick="loadGallery(${currentPage + 1}, true)">Load More</button>`;
     photoGrid.after(container);
   }
 }
 
 window.handlePhotoSelect = function(id) {
-  if (!isSelectMode) enterSelectMode();
+  if (!isSelectMode) isSelectMode = true;
   selectedIds.has(id) ? selectedIds.delete(id) : selectedIds.add(id);
   updateDownloadBar();
   renderPhotos(allPhotos);
 };
-
-function enterSelectMode() {
-  isSelectMode = true;
-  if (selectModeBtn) selectModeBtn.innerText = 'Cancel';
-}
 
 window.toggleSelectMode = function() {
   isSelectMode = !isSelectMode;
@@ -191,21 +179,16 @@ window.downloadSelected = async function() {
   const originalText = dlBtn.innerHTML;
   dlBtn.disabled = true;
   dlBtn.innerText = "Processing...";
-
   const selected = allPhotos.filter(p => selectedIds.has(p.id));
 
   for (const p of selected) {
-    try {
-      const link = document.createElement('a');
-      link.href = p.url;
-      link.download = p.name;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      await new Promise(r => setTimeout(r, 400));
-    } catch (err) {
-      console.error("Download failed:", p.name, err);
-    }
+    const link = document.createElement('a');
+    link.href = p.url;
+    link.download = p.name;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    await new Promise(r => setTimeout(r, 400));
   }
 
   dlBtn.disabled = false;
