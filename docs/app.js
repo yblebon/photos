@@ -1,6 +1,6 @@
 /**
  * External script for Photos PWA
- * Handles Auth, API integration, and UI rendering
+ * Optimized for high performance and double-click selection
  */
 
 let allPhotos = [];
@@ -10,7 +10,7 @@ let currentPage = 1;
 let hasNextPage = false;
 
 let API_BASE_URL = "";
-let AUTH_BASE_URL = ""; // Loaded from config
+let AUTH_BASE_URL = ""; 
 let token = localStorage.getItem('auth_token');
 
 // DOM Elements
@@ -22,15 +22,11 @@ const selectCountLabel = document.getElementById('select-count');
 const dlBtn = document.getElementById('dl-btn');
 const authScreen = document.getElementById('auth-screen');
 
-/**
- * Initialize App: Load config and check session
- */
 async function initApp() {
   try {
     const response = await fetch('config.json');
     const config = await response.json();
     API_BASE_URL = config.API_BASE_URL;
-    // Fallback if AUTH_BASE_URL isn't in config yet
     AUTH_BASE_URL = config.AUTH_BASE_URL || API_BASE_URL.replace('/api', '/auth');
 
     if (!token) {
@@ -43,10 +39,6 @@ async function initApp() {
   }
 }
 
-/**
- * Handle Authentication
- * FIX: Maps 'access_token' from response to prevent "Invalid credentials" error
- */
 window.handleLogin = async () => {
   const user = document.getElementById('username').value;
   const pass = document.getElementById('password').value;
@@ -66,7 +58,6 @@ window.handleLogin = async () => {
 
     const data = await res.json();
     
-    // Check specifically for access_token as per your backend requirement
     if (res.ok && data.access_token) {
       token = data.access_token;
       localStorage.setItem('auth_token', token);
@@ -85,10 +76,7 @@ window.handleLogin = async () => {
 
 window.handleLogout = () => {
   localStorage.removeItem('auth_token');
-  token = null;
-  allPhotos = [];
-  if (photoGrid) photoGrid.innerHTML = '';
-  showAuth(true);
+  location.reload(); 
 };
 
 function showAuth(show) {
@@ -97,13 +85,13 @@ function showAuth(show) {
 }
 
 /**
- * Fetch Photos with Authorization Header
+ * Optimized Gallery Fetching
  */
 async function loadGallery(page = 1, append = false) {
   if (!API_BASE_URL || !token) return;
 
   try {
-    const res = await fetch(`${API_BASE_URL}/photos?page=${page}&limit=12`, {
+    const res = await fetch(`${API_BASE_URL}/photos?page=${page}&limit=15`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
 
@@ -113,8 +101,7 @@ async function loadGallery(page = 1, append = false) {
     const newPhotos = data.photos.map(p => ({
       id: p._id,
       name: p.fileName,
-      url: `data:image/${p.thumbFormat};base64,${p.thumbnail}`,
-      tags: ["Gallery"]
+      url: `data:image/${p.thumbFormat};base64,${p.thumbnail}`
     }));
 
     allPhotos = append ? [...allPhotos, ...newPhotos] : newPhotos;
@@ -129,17 +116,30 @@ async function loadGallery(page = 1, append = false) {
 }
 
 /**
- * UI Rendering Logic
+ * Performance-optimized UI Rendering
+ * Uses DocumentFragment to minimize browser reflows
  */
 function renderPhotos(photos) {
   if (!photoGrid) return;
-  photoGrid.innerHTML = photos.map(photo => `
-    <div class="photo-item ${selectedIds.has(photo.id) ? 'selected' : ''}" 
-         ondblclick="handlePhotoSelect('${photo.id}')">
+  
+  const fragment = document.createDocumentFragment();
+  
+  photos.forEach(photo => {
+    const container = document.createElement('div');
+    container.className = `photo-item ${selectedIds.has(photo.id) ? 'selected' : ''}`;
+    
+    // RESTORED FEATURE: Select on double-click
+    container.ondblclick = () => handlePhotoSelect(photo.id);
+    
+    container.innerHTML = `
       <img src="${photo.url}" alt="${photo.name}" loading="lazy">
       <div class="select-indicator"><i data-lucide="check-circle-2"></i></div>
-    </div>
-  `).join('');
+    `;
+    fragment.appendChild(container);
+  });
+
+  photoGrid.innerHTML = ''; // Single clear
+  photoGrid.appendChild(fragment); // Single injection
   if (window.lucide) lucide.createIcons();
 }
 
@@ -150,6 +150,7 @@ function updateLoadMoreButton() {
   if (hasNextPage) {
     const container = document.createElement('div');
     container.id = 'load-more-container';
+    container.className = 'load-more-wrap';
     container.innerHTML = `<button class="text-btn" onclick="loadGallery(${currentPage + 1}, true)">Load More</button>`;
     photoGrid.after(container);
   }
@@ -196,14 +197,12 @@ window.downloadSelected = async function() {
   window.toggleSelectMode();
 };
 
-function applySearch(term) {
-  const t = term.toLowerCase();
-  const filtered = allPhotos.filter(p => p.name.toLowerCase().includes(t));
-  renderPhotos(filtered);
-}
-
 if (searchInput) {
-  searchInput.addEventListener('input', (e) => applySearch(e.target.value));
+  searchInput.addEventListener('input', (e) => {
+    const t = e.target.value.toLowerCase();
+    const filtered = allPhotos.filter(p => p.name.toLowerCase().includes(t));
+    renderPhotos(filtered);
+  });
 }
 
 document.addEventListener('DOMContentLoaded', initApp);

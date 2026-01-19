@@ -1,6 +1,6 @@
 {
-  "short_name": "PhotosPWA",
-  "name": "My Smooth Photo Library",
+  "short_name": "Photos",
+  "name": "Photo Library",
   "display": "standalone",
   "start_url": "/",
   "background_color": "#ffffff",
