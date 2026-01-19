@@ -10,28 +10,37 @@
 </head>
 <body>
 
+  <div id="auth-screen" class="auth-overlay hidden">
+    <div class="auth-card">
+      <div class="auth-header">
+        <i data-lucide="lock" class="lock-icon"></i>
+        <h1>Sign In</h1>
+        <p>Access your private library</p>
+      </div>
+      <div class="auth-form">
+        <input type="text" id="username" placeholder="Username" autocomplete="username">
+        <input type="password" id="password" placeholder="Password" autocomplete="current-password">
+        <button id="login-btn" onclick="handleLogin()">Sign In</button>
+      </div>
+    </div>
+  </div>
+
   <main id="content">
     <div class="search-container">
       <div class="search-input-wrapper">
         <i data-lucide="search" class="search-icon"></i>
-        <input type="text" id="photo-search" placeholder="Search photos, tags, or albums...">
+        <input type="text" id="photo-search" placeholder="Search photos...">
       </div>
     </div>
 
-    <section class="album-section">
-      <div class="section-header">
-        <h2>Albums</h2>
-        <button class="text-btn" onclick="resetFilter()">Show All</button>
-      </div>
-      <div class="album-scroller" id="album-scroller"></div>
-    </section>
-
     <section class="photos-section">
       <div class="section-header">
-        <h2 id="grid-title">All Photos</h2>
-        <button class="text-btn" id="select-mode-btn" onclick="toggleSelectMode()">Select</button>
+        <h2>All Photos</h2>
+        <div class="header-actions">
+          <button class="text-btn" id="select-mode-btn" onclick="toggleSelectMode()">Select</button>
+          <button class="text-btn danger" onclick="handleLogout()">Logout</button>
+        </div>
       </div>
-      <p class="hint">Double-click a photo to select and download</p>
       <div class="photo-grid" id="photo-grid"></div>
     </section>
   </main>
@@ -51,123 +60,6 @@
   </nav>
 
   <script src="https://unpkg.com/lucide@latest"></script>
-  <script>
-    let allPhotos = [];
-    let selectedIds = new Set();
-    let isSelectMode = false;
-    const searchInput = document.getElementById('photo-search');
-
-    async function loadGallery() {
-      try {
-        const res = await fetch('photos.json');
-        const data = await res.json();
-        allPhotos = data.photos;
-
-        document.getElementById('album-scroller').innerHTML = data.albums.map(album => `
-          <div class="album-card" onclick="filterByAlbum('${album.title}')">
-            <img src="${album.url}" alt="${album.title}">
-            <div class="album-info"><strong>${album.title}</strong><span>${album.count}</span></div>
-          </div>
-        `).join('');
-
-        renderPhotos(allPhotos);
-      } catch (e) { console.error(e); }
-    }
-
-    function renderPhotos(photos) {
-      document.getElementById('photo-grid').innerHTML = photos.map(photo => `
-        <div class="photo-item ${selectedIds.has(photo.id) ? 'selected' : ''}" 
-             ondblclick="handlePhotoSelect(${photo.id})">
-          <img src="${photo.url}" alt="${photo.name}">
-          <div class="select-indicator"><i data-lucide="check-circle-2"></i></div>
-          <div class="photo-overlay"><div class="tags">${photo.tags.map(t => `<span>#${t}</span>`).join('')}</div></div>
-        </div>
-      `).join('');
-      lucide.createIcons();
-    }
-
-    function handlePhotoSelect(id) {
-      if (!isSelectMode) enterSelectMode();
-      selectedIds.has(id) ? selectedIds.delete(id) : selectedIds.add(id);
-      updateDownloadBar();
-      renderPhotos(allPhotos);
-    }
-
-    function enterSelectMode() {
-      isSelectMode = true;
-      document.getElementById('select-mode-btn').innerText = 'Cancel';
-    }
-
-    function toggleSelectMode() {
-      isSelectMode = !isSelectMode;
-      selectedIds.clear();
-      document.getElementById('select-mode-btn').innerText = isSelectMode ? 'Cancel' : 'Select';
-      updateDownloadBar();
-      renderPhotos(allPhotos);
-    }
-
-    function updateDownloadBar() {
-      const bar = document.getElementById('download-bar');
-      document.getElementById('select-count').innerText = `${selectedIds.size} Selected`;
-      selectedIds.size > 0 ? bar.classList.remove('hidden') : bar.classList.add('hidden');
-    }
-
-    // FIXED DOWNLOAD LOGIC
-    async function downloadSelected() {
-      const btn = document.getElementById('dl-btn');
-      const originalText = btn.innerHTML;
-      btn.disabled = true;
-      btn.innerText = "Processing...";
-
-      const selected = allPhotos.filter(p => selectedIds.has(p.id));
-      
-      for (const p of selected) {
-        try {
-          const image = await fetch(p.url);
-          const imageBlog = await image.blob();
-          const imageURL = URL.createObjectURL(imageBlog);
-
-          const link = document.createElement('a');
-          link.href = imageURL;
-          link.download = `${p.name.replace(/\s+/g, '-').toLowerCase()}.jpg`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          URL.revokeObjectURL(imageURL); // Clean up memory
-          
-          await new Promise(r => setTimeout(r, 400));
-        } catch (err) {
-          console.error("Download failed for", p.name, err);
-        }
-      }
-
-      btn.disabled = false;
-      btn.innerHTML = originalText;
-      toggleSelectMode();
-    }
-
-    function filterByAlbum(name) {
-      searchInput.value = name;
-      applySearch(name);
-    }
-
-    function resetFilter() {
-      searchInput.value = "";
-      renderPhotos(allPhotos);
-    }
-
-    function applySearch(term) {
-      const t = term.toLowerCase();
-      const filtered = allPhotos.filter(p => 
-        p.name.toLowerCase().includes(t) || 
-        p.album.toLowerCase().includes(t) || 
-        p.tags.some(tag => tag.toLowerCase().includes(t))
-      );
-      renderPhotos(filtered);
-    }
-
-    searchInput.addEventListener('input', (e) => applySearch(e.target.value));
-    loadGallery();
-  </script>
+  <script src="app.js"></script>
 </body>
 </html>

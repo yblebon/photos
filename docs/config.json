@@ -1,0 +1,4 @@
+{
+  "API_BASE_URL": "https://photos-backend-inky.vercel.app/api",
+  "AUTH_BASE_URL": "https://identity-provider-blue.vercel.app/api"
+}
