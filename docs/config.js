@@ -63,8 +63,8 @@ class ConfigLibrary {
 
       // Minimal fallback – enough to not crash the app completely
       this.cachedConfig = {
-        photosApiBaseUrl: 'https://your-photos-app.vercel.app/api',
-        authApiBaseUrl:   'https://your-auth-app.vercel.app/api',
+        photosApiBaseUrl: 'https://photos-backend-inky.vercel.app/api',
+        authApiBaseUrl:   'https://identity-provider-blue.vercel.app/api',
         appName:          'Photo Vault (fallback)',
         debug:            false,
         defaultPageSize:  12
