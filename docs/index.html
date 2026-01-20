@@ -1,58 +1,81 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#ffffff">
-  <title>Smooth PWA</title>
-  <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Photo Vault</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script type="module" src="app.js" defer></script>
 </head>
 <body>
 
-  <div id="auth-screen" class="auth-overlay hidden">
+  <header>
+    <h1><i data-lucide="shield-check"></i> Photo Vault</h1>
+    <div class="header-actions">
+      <button id="logoutBtn" class="btn-ghost hidden">
+        <i data-lucide="log-out"></i> Logout
+      </button>
+      <button id="settingsBtn" class="btn-ghost hidden">
+        <i data-lucide="settings"></i> Settings
+      </button>
+    </div>
+  </header>
+
+  <!-- Auth screen – shown when not logged in -->
+  <div id="auth-screen" class="auth-screen">
     <div class="auth-card">
-      <div class="auth-header">
-        <i data-lucide="lock" class="lock-icon"></i>
-        <h1>Sign In</h1>
-        <p>Access your private library</p>
-      </div>
-      <div class="auth-form">
-        <input type="text" id="username" placeholder="Username" autocomplete="username">
-        <input type="password" id="password" placeholder="Password" autocomplete="current-password">
-        <button id="login-btn" onclick="handleLogin()">Sign In</button>
-      </div>
+      <h2>Sign In</h2>
+      <form id="loginForm">
+        <input type="text" id="username" placeholder="Username" required autocomplete="username" />
+        <input type="password" id="password" placeholder="Password" required autocomplete="current-password" />
+        <button type="submit">Login</button>
+      </form>
+      <p id="authError" class="error-text hidden"></p>
     </div>
   </div>
 
-  <main id="content">
-    <div class="search-container">
-      <div class="search-input-wrapper">
-        <i data-lucide="search" class="search-icon"></i>
-        <input type="text" id="photo-search" placeholder="Search photos...">
+  <!-- Main app – shown when logged in -->
+  <main id="app" class="hidden">
+
+    <!-- Master Key / Settings Overlay Panel -->
+    <div id="master-key-panel" class="settings-panel hidden">
+      <div class="panel-header">
+        <h3><i data-lucide="key-round"></i> Master Key</h3>
+        <button id="closeSettings" class="btn-ghost"><i data-lucide="x"></i></button>
       </div>
+
+      <div id="key-status" class="hidden">
+        <p class="success-text">
+          <i data-lucide="check-circle"></i> Vault decryption ready
+        </p>
+        <button id="changeKeyBtn" class="btn-ghost">Change Key</button>
+      </div>
+
+      <div id="key-input-area">
+        <p class="helper-text">
+          Enter your master key to decrypt and view photos
+        </p>
+        <form id="masterKeyForm" class="inline-form">
+          <input type="password" id="masterKeyInput" placeholder="Master Encryption Key" required autocomplete="new-password" />
+          <button type="submit">Unlock Vault</button>
+        </form>
+      </div>
+
+      <p id="keyStatusMessage" class="status-message hidden"></p>
     </div>
 
-    <section class="photos-section">
-      <div class="section-header">
-        <h2>All Photos</h2>
-        <div class="header-actions">
-          <button class="text-btn" id="select-mode-btn" onclick="toggleSelectMode()">Select</button>
-          <button class="text-btn danger" onclick="handleLogout()">Logout</button>
-        </div>
+    <section id="content-area">
+      <div id="loading" class="loader-container hidden"></div>
+      <ul id="photo-list" class="photo-grid"></ul>
+      <div class="footer-actions">
+        <button id="loadMore" class="btn-ghost hidden">Load More</button>
       </div>
-      <div class="photo-grid" id="photo-grid"></div>
     </section>
   </main>
 
-  <div id="download-bar" class="action-bar hidden">
-    <span id="select-count">0 Selected</span>
-    <button class="download-btn" id="dl-btn" onclick="downloadSelected()">
-      <i data-lucide="download"></i> Download
-    </button>
-  </div>
+  <!-- Photo detail modal -->
+  <div id="detail-modal" class="modal-overlay hidden"></div>
 
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <script src="app.js"></script>
 </body>
 </html>

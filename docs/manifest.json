@@ -1,15 +1,26 @@
 {
+  "name": "Photo Vault",
   "short_name": "Photos",
-  "name": "Photo Library",
+  "description": "Secure photo viewer with encrypted storage",
+  "start_url": "/?utm_source=pwa",
   "display": "standalone",
-  "start_url": "/",
-  "background_color": "#ffffff",
-  "theme_color": "#007AFF",
+  "background_color": "#111111",
+  "theme_color": "#4f46e5",
   "icons": [
     {
-      "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAMAAABlSTJ6AAAAA1BMVEUAAACnej3aAAAAAXRSTlMAQObYZgAAADpJREFUeNrtwQEBAAAAgiD/r25IQAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAfBuCAAAB0ni46AAAAABJRU5ErkJggg==",
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
       "type": "image/png",
-      "sizes": "192x192"
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
     }
-  ]
+  ],
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "id": "/"
 }
