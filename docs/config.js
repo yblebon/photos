@@ -29,7 +29,7 @@ class ConfigLibrary {
     this.isLoading = true;
 
     try {
-      const response = await fetch('/config.json', {
+      const response = await fetch('./config.json', {
         cache: 'no-cache',
         headers: { 'Accept': 'application/json' }
       });

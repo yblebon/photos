@@ -30,6 +30,9 @@ let hasMorePhotos = true;
 const objectURLs = new Set();
 const PAGE_SIZE = 20;
 
+// In-memory only – never persisted
+let sessionMasterKey = null;
+
 document.addEventListener('DOMContentLoaded', async () => {
   try {
     await config.getConfig();
@@ -60,21 +63,25 @@ function showApp() {
   els.app.classList.remove('hidden');
   els.logoutBtn.classList.remove('hidden');
   els.settingsBtn.classList.remove('hidden');
-  checkMasterKeyState();
+
+  // Automatically open unlock panel after login / reload
+  els.masterKeyPanel.classList.remove('hidden');
+  els.masterKeyInput.focus();
+  updateKeyUIState();
 }
 
-async function checkMasterKeyState(forceRender = false) {
-  const masterKey = await getItem('master_key');
-  if (masterKey) {
+function updateKeyUIState() {
+  if (sessionMasterKey) {
     els.keyStatus.classList.remove('hidden');
     els.keyInputArea.classList.add('hidden');
     els.keyMsg.classList.add('hidden');
-    if (forceRender || els.photoList.children.length === 0) {
-      await renderPhotos();
+    if (els.photoList.children.length === 0) {
+      renderPhotos();
     }
   } else {
     els.keyStatus.classList.add('hidden');
     els.keyInputArea.classList.remove('hidden');
+    els.masterKeyPanel.classList.remove('hidden'); // ensure visible
   }
 }
 
@@ -104,14 +111,15 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
 
 els.logoutBtn.addEventListener('click', async () => {
   revokeAllObjectURLs();
-  await clear();
+  sessionMasterKey = null;
+  await clear();           // clears auth_token
   location.reload();
 });
 
 els.settingsBtn.addEventListener('click', () => {
   els.masterKeyPanel.classList.remove('hidden');
   els.masterKeyInput.focus();
-  checkMasterKeyState();
+  updateKeyUIState();
 });
 
 els.closeSettings.addEventListener('click', () => {
@@ -125,26 +133,36 @@ els.keyForm.addEventListener('submit', async (e) => {
   if (!key) return;
 
   try {
-    await setItem('master_key', key);
-    els.keyMsg.textContent = 'Clé maître enregistrée ✓ Coffre déverrouillé';
+    // Minimal length check – you can strengthen this later
+    if (key.length < 8) {
+      throw new Error('La clé doit contenir au moins 8 caractères');
+    }
+
+    // Store only in memory for this session
+    sessionMasterKey = key;
+
+    els.keyMsg.textContent = 'Coffre déverrouillé ✓';
     els.keyMsg.classList.remove('hidden', 'error-text');
     els.keyMsg.classList.add('success-text');
+
+    // Clear the input field immediately
+    els.masterKeyInput.value = '';
 
     setTimeout(() => {
       els.masterKeyPanel.classList.add('hidden');
       renderPhotos();
-    }, 1400);
+    }, 1200);
   } catch (err) {
-    els.keyMsg.textContent = 'Échec de l’enregistrement de la clé';
+    els.keyMsg.textContent = err.message || 'Échec du déverrouillage';
     els.keyMsg.classList.remove('hidden', 'success-text');
     els.keyMsg.classList.add('error-text');
   }
 });
 
-els.changeKeyBtn.addEventListener('click', () => {
-  els.keyStatus.classList.add('hidden');
-  els.keyInputArea.classList.remove('hidden');
+els.changeKeyBtn?.addEventListener('click', () => {
+  sessionMasterKey = null;
   els.masterKeyInput.value = '';
+  updateKeyUIState();
   els.masterKeyInput.focus();
 });
 
@@ -168,14 +186,13 @@ async function renderPhotos(append = false) {
 
   try {
     const data = await getPhotos(currentPage, PAGE_SIZE);
-    const masterKey = await getItem('master_key');
 
-    if (!masterKey) {
+    if (!sessionMasterKey) {
       els.photoList.innerHTML = `
         <div class="gallery-locked-message">
           <i data-lucide="lock-keyhole"></i>
-          <p>La galerie est verrouillée</p>
-          <small>Ouvrez les paramètres pour entrer votre clé maître</small>
+          <p>Le coffre est verrouillé</p>
+          <small>Cliquez sur Paramètres pour entrer votre clé maître</small>
         </div>`;
       els.loading.classList.add('hidden');
       isLoading = false;
@@ -190,16 +207,14 @@ async function renderPhotos(append = false) {
 
       let contentHTML = getLockedPlaceholder();
 
-      if (masterKey) {
-        try {
-          const blob = await PhotoDecryptor.decryptPhoto(photo, masterKey, 'thumbnail');
-          const url = URL.createObjectURL(blob);
-          objectURLs.add(url);
-          contentHTML = `<img src="${url}" class="thumb" alt="${photo.filename || 'Photo'}">`;
-        } catch (e) {
-          console.warn('Échec décryptage vignette', photo.filename, e);
-          // reste sur le placeholder verrouillé
-        }
+      try {
+        const blob = await PhotoDecryptor.decryptPhoto(photo, sessionMasterKey, 'thumbnail');
+        const url = URL.createObjectURL(blob);
+        objectURLs.add(url);
+        contentHTML = `<img src="${url}" class="thumb" alt="${photo.filename || 'Photo'}">`;
+      } catch (e) {
+        console.warn('Échec décryptage vignette', photo.filename, e);
+        // remains locked placeholder
       }
 
       li.innerHTML = `
@@ -207,12 +222,8 @@ async function renderPhotos(append = false) {
         <span class="filename">${photo.fileName || 'Document sans nom'}</span>
       `;
 
-      if (masterKey) {
-        li.style.cursor = 'pointer';
-        li.addEventListener('click', () => showDetail(photo._id));
-      } else {
-        li.style.cursor = 'not-allowed';
-      }
+      li.style.cursor = 'pointer';
+      li.addEventListener('click', () => showDetail(photo._id));
 
       els.photoList.appendChild(li);
     }
@@ -246,13 +257,12 @@ els.loadMoreBtn.addEventListener('click', () => renderPhotos(true));
 async function showDetail(id) {
   try {
     const photo = await getPhotoById(id);
-    const masterKey = await getItem('master_key');
 
-    let content = `<div class="helper-text">Clé maître requise pour voir l’image complète</div>`;
+    let content = `<div class="helper-text">Le coffre est verrouillé – entrez la clé maître dans Paramètres</div>`;
 
-    if (masterKey) {
+    if (sessionMasterKey) {
       try {
-        const blob = await PhotoDecryptor.decryptPhoto(photo, masterKey, 'fullsize');
+        const blob = await PhotoDecryptor.decryptPhoto(photo, sessionMasterKey, 'fullsize');
         const url = URL.createObjectURL(blob);
         objectURLs.add(url);
         content = `<img src="${url}" class="full-img" alt="${photo.filename || 'Photo'}">`;
@@ -260,8 +270,7 @@ async function showDetail(id) {
         console.warn('Échec décryptage image complète', id, e);
         content = `
           <div class="error-text">Échec du décryptage</div>
-          <p class="helper-text">La clé maître semble incorrecte.<br>
-          Essayez de la modifier dans Paramètres → Changer la clé.</p>
+          <p class="helper-text">Clé maître incorrecte ?<br>Fermez cette fenêtre et réessayez dans Paramètres.</p>
         `;
       }
     }
@@ -297,4 +306,7 @@ async function showDetail(id) {
   }
 }
 
-window.addEventListener('beforeunload', revokeAllObjectURLs);
+window.addEventListener('beforeunload', () => {
+  sessionMasterKey = null;
+  revokeAllObjectURLs();
+});

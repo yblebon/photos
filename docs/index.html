@@ -38,23 +38,27 @@
   <!-- Main app – shown when logged in -->
   <main id="app" class="hidden">
 
-    <!-- Master Key / Settings Overlay Panel -->
+    <!-- Vault Unlock Panel -->
     <div id="master-key-panel" class="settings-panel hidden">
       <div class="panel-header">
-        <h3><i data-lucide="key-round"></i> Master Key</h3>
+        <h3><i data-lucide="lock-keyhole"></i> Unlock Vault</h3>
         <button id="closeSettings" class="btn-ghost"><i data-lucide="x"></i></button>
       </div>
 
       <div id="key-status" class="hidden">
         <p class="success-text">
-          <i data-lucide="check-circle"></i> Vault decryption ready
+          <i data-lucide="check-circle"></i> Vault unlocked
         </p>
-        <button id="changeKeyBtn" class="btn-ghost">Change Key</button>
+        <button id="changeKeyBtn" class="btn-ghost">Lock / Change Key</button>
       </div>
 
       <div id="key-input-area">
         <p class="helper-text">
-          Enter your master key to decrypt and view photos
+          Enter your master key to decrypt and view your photos
+        </p>
+        <p class="helper-text" style="font-size: 0.9rem; margin-top: 1rem; opacity: 0.8;">
+          <strong>Important:</strong> This key is <strong>never saved</strong> on your device.<br>
+          You will need to enter it every time you open Photo Vault.
         </p>
         <form id="masterKeyForm" class="inline-form">
           <input type="password" id="masterKeyInput" placeholder="Master Encryption Key" required autocomplete="new-password" />
