@@ -1,16 +1,21 @@
 // sw.js
-const CACHE_NAME = 'photo-pwa-v1';
+const CACHE_NAME = 'photo-pwa-v2';
 
+// Relative to the service worker scope so the app also works from a subpath.
 const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/app.js',
-  '/api.js',
-  '/styles.css',
-  '/config.json',
-  '/manifest.json',
-  '/offline.html',
-  // icons will be cached automatically when referenced
+  './',
+  'index.html',
+  'app.js',
+  'api-photos.js',
+  'auth.js',
+  'config.js',
+  'decryptor.js',
+  'storage.js',
+  'styles.css',
+  'config.json',
+  'manifest.json',
+  'offline.html',
+  'vendor/lucide.min.js'
 ];
 
 self.addEventListener('install', event => {
@@ -32,31 +37,22 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
-  const url = new URL(event.request.url);
+  const req = event.request;
+  const url = new URL(req.url);
 
-  if (url.pathname.startsWith('/api/')) {
-    event.respondWith(
-      fetch(event.request).catch(async () => {
-        const cached = await caches.match(event.request);
-        if (cached) return cached;
-        return new Response(JSON.stringify({ error: 'Offline – data not available' }), {
-          status: 503,
-          headers: { 'Content-Type': 'application/json' }
-        });
-      })
-    );
-    return;
-  }
+  // Only handle same-origin GETs. API calls (cross-origin, authenticated,
+  // and carrying encrypted photo data) always go straight to the network
+  // and are never cached.
+  if (req.method !== 'GET' || url.origin !== self.location.origin) return;
 
   event.respondWith(
-    caches.match(event.request).then(cached => {
-      return cached || fetch(event.request).then(response => {
-        if (response.ok) {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
-        }
-        return response;
-      }).catch(() => caches.match('/offline.html'));
+    caches.match(req).then(cached => {
+      if (cached) return cached;
+      return fetch(req).catch(() =>
+        req.mode === 'navigate'
+          ? caches.match('offline.html')
+          : new Response('', { status: 503 })
+      );
     })
   );
 });

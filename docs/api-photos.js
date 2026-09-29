@@ -2,6 +2,11 @@
 import { getPhotosBaseUrl, getDefaultPageSize } from './config.js';
 
 let currentToken = null;
+let onSessionExpired = null;
+
+export function setSessionExpiredHandler(fn) {
+  onSessionExpired = fn;
+}
 
 /**
  * Expose function to set the token (called by app.js)
@@ -39,6 +44,7 @@ async function apiFetch(path, options = {}) {
   if (response.status === 401 || response.status === 403) {
     console.warn('[Photos API] Session expired');
     currentToken = null;
+    if (onSessionExpired) onSessionExpired();
   }
 
   if (!response.ok) {
