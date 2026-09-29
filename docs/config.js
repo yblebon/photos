@@ -5,7 +5,7 @@
 class ConfigLibrary {
   constructor() {
     this.cachedConfig = null;
-    this.isLoading = false;
+    this.loadPromise = null;
   }
 
   /**
@@ -14,20 +14,13 @@ class ConfigLibrary {
   async _loadConfig() {
     if (this.cachedConfig) return this.cachedConfig;
     
-    if (this.isLoading) {
-      // Prevent concurrent fetches (simple promise sharing)
-      return new Promise(resolve => {
-        const interval = setInterval(() => {
-          if (this.cachedConfig) {
-            clearInterval(interval);
-            resolve(this.cachedConfig);
-          }
-        }, 50);
-      });
-    }
+    if (this.loadPromise) return this.loadPromise;
 
-    this.isLoading = true;
+    this.loadPromise = this._fetchConfig();
+    return this.loadPromise;
+  }
 
+  async _fetchConfig() {
     try {
       const response = await fetch('./config.json', {
         cache: 'no-cache',
@@ -56,7 +49,6 @@ class ConfigLibrary {
         defaultPageSize:  Number(data.defaultPageSize) || 12
       };
 
-      console.log('[Config] Loaded successfully:', this.cachedConfig);
       return this.cachedConfig;
     } catch (err) {
       console.error('[Config] Load failed:', err);
@@ -73,7 +65,7 @@ class ConfigLibrary {
       console.warn('[Config] Using fallback configuration');
       return this.cachedConfig;
     } finally {
-      this.isLoading = false;
+      this.loadPromise = null;
     }
   }
 

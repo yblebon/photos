@@ -21,7 +21,28 @@ export const PhotoDecryptor = (() => {
         return new Uint8Array(hex.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
     }
 
+    // Derived keys cached per (salt, domain) for the current password only.
+    let keyCache = new Map();
+    let cachePassword = null;
+
     async function deriveKey(password, salt, domain) {
+        if (cachePassword !== password) {
+            keyCache = new Map();
+            cachePassword = password;
+        }
+        const id = domain + ':' + Array.from(salt).join(',');
+        if (!keyCache.has(id)) {
+            keyCache.set(id, deriveKeyUncached(password, salt, domain));
+        }
+        try {
+            return await keyCache.get(id);
+        } catch (e) {
+            keyCache.delete(id);
+            throw e;
+        }
+    }
+
+    async function deriveKeyUncached(password, salt, domain) {
         const enc = new TextEncoder();
         const keyMaterial = await window.crypto.subtle.importKey(
             'raw',
@@ -75,6 +96,8 @@ export const PhotoDecryptor = (() => {
             const mimeType = doc.metadata?.format ? `image/${doc.metadata.format}` : 'image/jpeg';
             return new Blob([decryptedBuffer], { type: mimeType });
         },
+
+        clearCache: () => { keyCache = new Map(); cachePassword = null; },
 
         createImageObjectURL: async (doc, password, type) => {
             const blob = await PhotoDecryptor.decryptPhoto(doc, password, type);

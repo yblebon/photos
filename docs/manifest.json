@@ -2,25 +2,25 @@
   "name": "Photo Vault",
   "short_name": "Photos",
   "description": "Secure photo viewer with encrypted storage",
-  "start_url": "/?utm_source=pwa",
+  "start_url": "./?utm_source=pwa",
   "display": "standalone",
   "background_color": "#111111",
   "theme_color": "#4f46e5",
   "icons": [
     {
-      "src": "/icons/icon-192.png",
+      "src": "icons/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/icons/icon-512.png",
+      "src": "icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
     }
   ],
   "orientation": "portrait-primary",
-  "scope": "/",
-  "id": "/"
+  "scope": "./",
+  "id": "./"
 }
